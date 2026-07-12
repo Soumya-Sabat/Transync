@@ -5,6 +5,34 @@ import { Prisma, VehicleStatus } from "@prisma/client";
 
 export const runtime = "nodejs";
 
+const vehicleStatuses = ["AVAILABLE", "ON_TRIP", "IN_SHOP", "RETIRED"] as const;
+
+function isVehicleStatus(status: unknown): status is VehicleStatus {
+  return typeof status === "string" && vehicleStatuses.includes(status as VehicleStatus);
+}
+
+function parseNumber(value: unknown, fallback = 0) {
+  if (value === undefined || value === null || value === "") return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+function errorResponse(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message === "Unauthorized") {
+    return NextResponse.json({ error: "Please sign in again" }, { status: 401 });
+  }
+
+  if (error instanceof Error && error.message === "Forbidden") {
+    return NextResponse.json({ error: "You do not have permission to manage vehicles" }, { status: 403 });
+  }
+
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    return NextResponse.json({ error: "Registration number already exists" }, { status: 409 });
+  }
+
+  return NextResponse.json({ error: fallback }, { status: 500 });
+}
+
 export async function GET(request: Request) {
   try {
     await requirePermission("vehicles:read");
@@ -81,33 +109,53 @@ export async function POST(request: Request) {
       status = "AVAILABLE",
     } = body;
 
-    if (!registrationNo || !name || !type || maxLoadCapacity === undefined) {
+    const trimmedRegistrationNo = String(registrationNo ?? "").trim();
+    const trimmedName = String(name ?? "").trim();
+    const trimmedType = String(type ?? "").trim();
+    const parsedMaxLoadCapacity = parseNumber(maxLoadCapacity, Number.NaN);
+    const parsedOdometer = parseNumber(odometer);
+    const parsedAcquisitionCost = parseNumber(acquisitionCost);
+    const vehicleStatus = isVehicleStatus(status) ? status : "AVAILABLE";
+
+    if (!trimmedRegistrationNo || !trimmedName || !trimmedType || maxLoadCapacity === undefined || maxLoadCapacity === "") {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    if (!Number.isFinite(parsedMaxLoadCapacity) || parsedMaxLoadCapacity < 0) {
+      return NextResponse.json({ error: "Max load must be a valid number" }, { status: 400 });
+    }
+
+    if (!Number.isFinite(parsedOdometer) || parsedOdometer < 0) {
+      return NextResponse.json({ error: "Odometer must be a valid number" }, { status: 400 });
+    }
+
+    if (!Number.isFinite(parsedAcquisitionCost) || parsedAcquisitionCost < 0) {
+      return NextResponse.json({ error: "Acquisition cost must be a valid number" }, { status: 400 });
+    }
+
     const existingVehicle = await prisma.vehicle.findUnique({
-      where: { registrationNo },
+      where: { registrationNo: trimmedRegistrationNo },
     });
 
     if (existingVehicle) {
-      return NextResponse.json({ error: "Registration number already exists" }, { status: 400 });
+      return NextResponse.json({ error: "Registration number already exists" }, { status: 409 });
     }
 
     const vehicle = await prisma.vehicle.create({
       data: {
-        registrationNo,
-        name,
-        type,
-        maxLoadCapacity: parseFloat(maxLoadCapacity),
-        odometer: parseFloat(odometer) || 0,
-        acquisitionCost: parseFloat(acquisitionCost) || 0,
-        status,
+        registrationNo: trimmedRegistrationNo,
+        name: trimmedName,
+        type: trimmedType,
+        maxLoadCapacity: parsedMaxLoadCapacity,
+        odometer: parsedOdometer,
+        acquisitionCost: parsedAcquisitionCost,
+        status: vehicleStatus,
       },
     });
 
     return NextResponse.json(vehicle, { status: 201 });
   } catch (error) {
     console.error("Error creating vehicle:", error);
-    return NextResponse.json({ error: "Failed to create vehicle" }, { status: 500 });
+    return errorResponse(error, "Failed to create vehicle");
   }
 }
