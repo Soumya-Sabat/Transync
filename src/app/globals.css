@@ -96,4 +96,74 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.85s ease-out both;
+  }
+
+  .animate-glow {
+    animation: pulseGlow 2.6s ease-in-out infinite;
+  }
+
+  .animate-drift {
+    animation: drift 20s linear infinite;
+  }
+
+  .animate-float {
+    animation: float 5.6s ease-in-out infinite;
+  }
+
+  .typewriter {
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 0.18em solid rgba(56,189,248,0.9);
+    animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+  }
+
+  .typewriter-slow {
+    animation: typing 4.5s steps(40, end), blink-caret 0.75s step-end infinite;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.75;
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(0, -1px, 0);
+  }
+}
+
+@keyframes drift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
 }
