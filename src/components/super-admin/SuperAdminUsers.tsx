@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState, useTransition } from "react";
-import { Role } from "@prisma/client";
 import { AlertCircle, Loader2, RefreshCw, Save, Shield, Trash2, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,20 +10,20 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
-import { dbRoles, formatRole } from "@/lib/roles";
+import { dbRoles, formatRole, type DbRole } from "@/lib/roles";
 
 type ManagedUser = {
   id: string;
   email: string;
   name: string;
-  role: Role;
+  role: DbRole;
   createdAt: string;
   updatedAt: string;
 };
 
 type EditableUser = ManagedUser & {
   draftName: string;
-  draftRole: Role;
+  draftRole: DbRole;
   draftPassword: string;
 };
 
@@ -32,14 +31,14 @@ type CreateForm = {
   name: string;
   email: string;
   password: string;
-  role: Role;
+  role: DbRole;
 };
 
 const emptyCreateForm: CreateForm = {
   name: "",
   email: "",
   password: "",
-  role: Role.FLEET_MANAGER,
+  role: "FLEET_MANAGER",
 };
 
 export function SuperAdminUsers() {
@@ -241,7 +240,7 @@ export function SuperAdminUsers() {
               <Label>Role</Label>
               <Select
                 value={createForm.role}
-                onValueChange={(role) => setCreateForm((form) => ({ ...form, role: role as Role }))}
+                onValueChange={(role) => setCreateForm((form) => ({ ...form, role: role as DbRole }))}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -304,7 +303,7 @@ export function SuperAdminUsers() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Select value={user.draftRole} onValueChange={(role) => patchUser(user.id, { draftRole: role as Role })}>
+                      <Select value={user.draftRole} onValueChange={(role) => patchUser(user.id, { draftRole: role as DbRole })}>
                         <SelectTrigger className="w-48">
                           <SelectValue />
                         </SelectTrigger>

@@ -1,5 +1,4 @@
-import { Role } from "@prisma/client";
-import { AppRole, isSuperAdminRole } from "@/lib/roles";
+import { isSuperAdminRole, type AppRole, type DbRole } from "@/lib/roles";
 
 export type NavItem = {
   href: string;
@@ -23,7 +22,7 @@ const fullOperationalNav: NavItem[] = [
 ];
 
 export function getNavItemsForRole(role: AppRole): NavItem[] {
-  const roleNav: Record<Role, NavItem[]> = {
+  const roleNav: Record<DbRole, NavItem[]> = {
     FLEET_MANAGER: fullOperationalNav,
     DRIVER: [
       ...baseNav,
