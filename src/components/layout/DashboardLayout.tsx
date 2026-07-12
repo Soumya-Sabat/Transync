@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { getRoleColor, getInitials } from "@/lib/utils";
-import { AppRole, SUPER_ADMIN_ROLE, formatRole } from "@/lib/roles";
+import { AppRole, formatRole } from "@/lib/roles";
 import { getNavItemsForRole } from "@/lib/navigation";
 
 const icons = {
@@ -51,7 +51,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const userRole = session?.user?.role ?? SUPER_ADMIN_ROLE;
+  const userRole = session?.user?.role;
   const userName = session?.user?.name || "User";
   const userEmail = session?.user?.email || "";
 
@@ -134,9 +134,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <div className="px-2 py-1">
                   <p className="text-sm font-medium">{userName}</p>
                   <p className="text-xs text-muted-foreground">{userEmail}</p>
-                  <span className={`inline-block mt-1 px-2 py-0.5 text-xs rounded-full ${getRoleColor(userRole)}`}>
-                    {formatRole(userRole)}
-                  </span>
+                  {userRole && (
+                    <span className={`inline-block mt-1 px-2 py-0.5 text-xs rounded-full ${getRoleColor(userRole)}`}>
+                      {formatRole(userRole)}
+                    </span>
+                  )}
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
@@ -175,7 +177,7 @@ function SidebarContent({
 }: {
   filteredNav: ReturnType<typeof getNavItemsForRole>;
   pathname: string;
-  userRole: AppRole;
+  userRole?: AppRole;
   userName: string;
   userEmail: string;
   onClose?: () => void;
@@ -228,9 +230,11 @@ function SidebarContent({
             <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
           </div>
         </div>
-        <span className={`mt-2 inline-block max-w-full truncate px-2 py-0.5 text-xs rounded-full ${getRoleColor(userRole)}`}>
-          {formatRole(userRole)}
-        </span>
+        {userRole && (
+          <span className={`mt-2 inline-block max-w-full truncate px-2 py-0.5 text-xs rounded-full ${getRoleColor(userRole)}`}>
+            {formatRole(userRole)}
+          </span>
+        )}
 
         {onClose && (
           <Button

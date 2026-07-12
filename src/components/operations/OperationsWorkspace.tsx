@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { Download, Loader2, Plus, RefreshCw, Save, Search, Trash2 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,10 +12,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { hasPermission, type Permission } from "@/lib/permissions";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 type Row = Record<string, unknown>;
-type Option = { label: string; value: string };
+type Option = { label: string; value: string; maxLoadCapacity?: number };
 type FieldType = "text" | "number" | "date" | "select";
 type Field = {
   key: string;
@@ -23,6 +25,7 @@ type Field = {
   required?: boolean;
   options?: Option[];
   optionSource?: "vehicles" | "drivers" | "trips";
+  entityOption?: boolean;
   placeholder?: string;
 };
 type Column = {
@@ -36,10 +39,12 @@ type ResourceConfig = {
   endpoint: string;
   collectionKey: string;
   createTitle: string;
+  createPermission?: Permission;
   searchPlaceholder?: string;
   fields: Field[];
   columns: Column[];
   filters?: Field[];
+  lookupSources?: Array<"vehicles" | "drivers" | "trips">;
   updateMethod?: "PUT" | "PATCH";
   deleteLabel?: string;
 };
@@ -81,6 +86,7 @@ const configs: Record<string, ResourceConfig> = {
     endpoint: "/api/vehicles",
     collectionKey: "vehicles",
     createTitle: "Add vehicle",
+    createPermission: "vehicles:create",
     searchPlaceholder: "Registration, name, or type",
     fields: [
       { key: "registrationNo", label: "Registration No", required: true },
@@ -110,6 +116,7 @@ const configs: Record<string, ResourceConfig> = {
     endpoint: "/api/drivers",
     collectionKey: "drivers",
     createTitle: "Add driver",
+    createPermission: "drivers:create",
     searchPlaceholder: "Name, license, or phone",
     fields: [
       { key: "name", label: "Name", required: true },
@@ -139,6 +146,7 @@ const configs: Record<string, ResourceConfig> = {
     endpoint: "/api/trips",
     collectionKey: "trips",
     createTitle: "Create trip",
+    createPermission: "trips:create",
     searchPlaceholder: "Source or destination",
     fields: [
       { key: "source", label: "Source", required: true },
@@ -166,6 +174,7 @@ const configs: Record<string, ResourceConfig> = {
     endpoint: "/api/maintenance",
     collectionKey: "logs",
     createTitle: "Open maintenance",
+    createPermission: "maintenance:create",
     fields: [
       { key: "vehicleId", label: "Vehicle", type: "select", optionSource: "vehicles", required: true },
       { key: "type", label: "Maintenance Type", required: true },
@@ -193,9 +202,10 @@ const configs: Record<string, ResourceConfig> = {
     endpoint: "/api/documents",
     collectionKey: "documents",
     createTitle: "Add document",
+    createPermission: "documents:create",
     fields: [
       { key: "entityType", label: "Entity Type", type: "select", options: entityTypeOptions, required: true },
-      { key: "entityId", label: "Entity ID", required: true },
+      { key: "entityId", label: "Entity", type: "select", entityOption: true, required: true },
       { key: "type", label: "Document Type", type: "select", options: documentTypeOptions, required: true },
       { key: "fileUrl", label: "File URL", required: true },
       { key: "expiryDate", label: "Expiry Date", type: "date" },
@@ -212,6 +222,7 @@ const configs: Record<string, ResourceConfig> = {
       { key: "expiryDate", label: "Expiry", type: "date" },
       { key: "uploadedBy.name", label: "Uploaded By" },
     ],
+    lookupSources: ["vehicles", "drivers"],
     deleteLabel: "Delete",
   },
 };
@@ -245,6 +256,7 @@ export function FuelExpensesWorkspace() {
               endpoint: "/api/fuel-expenses",
               collectionKey: "logs",
               createTitle: "Add fuel log",
+              createPermission: "fuel:create",
               fields: [
                 { key: "vehicleId", label: "Vehicle", type: "select", optionSource: "vehicles", required: true },
                 { key: "tripId", label: "Trip", type: "select", optionSource: "trips" },
@@ -273,6 +285,7 @@ export function FuelExpensesWorkspace() {
               endpoint: "/api/expenses",
               collectionKey: "expenses",
               createTitle: "Add expense",
+              createPermission: "expenses:create",
               fields: [
                 { key: "vehicleId", label: "Vehicle", type: "select", optionSource: "vehicles" },
                 { key: "tripId", label: "Trip", type: "select", optionSource: "trips" },
@@ -369,6 +382,7 @@ export function ReportsWorkspace() {
 }
 
 function ResourcePanel({ config }: { config: ResourceConfig }) {
+  const { data: session } = useSession();
   const [rows, setRows] = useState<Row[]>([]);
   const [form, setForm] = useState<Row>({});
   const [filters, setFilters] = useState<Row>({});
@@ -382,17 +396,40 @@ function ResourcePanel({ config }: { config: ResourceConfig }) {
   const [, startTransition] = useTransition();
 
   const allFields = useMemo(() => [...config.fields, ...(config.filters ?? [])], [config.fields, config.filters]);
+  const canCreate = !config.createPermission || hasPermission(session?.user?.role, config.createPermission);
+  const filteredLookups = useMemo(() => {
+    if (config.collectionKey !== "trips") return lookups;
+
+    const cargoWeight = Number(form.cargoWeight);
+    if (!Number.isFinite(cargoWeight) || cargoWeight <= 0) return lookups;
+
+    return {
+      ...lookups,
+      vehicles: lookups.vehicles.filter((vehicle) => {
+        if (vehicle.maxLoadCapacity === undefined) return false;
+        return vehicle.maxLoadCapacity >= cargoWeight;
+      }),
+    };
+  }, [config.collectionKey, form.cargoWeight, lookups]);
 
   const loadLookups = useCallback(async () => {
-    const needs = new Set(allFields.map((field) => field.optionSource).filter(Boolean));
+    const needs = new Set([
+      ...allFields.map((field) => field.optionSource).filter(Boolean),
+      ...(config.lookupSources ?? []),
+    ]);
     const entries = await Promise.all(
       [...needs].map(async (source) => {
         const endpoint = source === "vehicles" ? "/api/vehicles?limit=100" : source === "drivers" ? "/api/drivers?limit=100" : "/api/trips?limit=100";
         const response = await fetch(endpoint, { cache: "no-store" });
         const data = await response.json();
         const collection = source === "vehicles" ? data.vehicles : source === "drivers" ? data.drivers : data.trips;
-        const options = (collection as Row[]).map((item) => ({
+        if (!response.ok || !Array.isArray(collection)) {
+          return [source, []] as const;
+        }
+
+        const options = collection.map((item: Row) => ({
           value: String(item.id),
+          maxLoadCapacity: source === "vehicles" ? Number(item.maxLoadCapacity ?? Number.NaN) : undefined,
           label:
             source === "vehicles"
               ? `${String(item.registrationNo ?? "")} ${String(item.name ?? "")}`.trim()
@@ -404,7 +441,7 @@ function ResourcePanel({ config }: { config: ResourceConfig }) {
       })
     );
     setLookups((current) => ({ ...current, ...Object.fromEntries(entries) }));
-  }, [allFields]);
+  }, [allFields, config.lookupSources]);
 
   const loadRows = useCallback(async () => {
     setIsLoading(true);
@@ -512,33 +549,38 @@ function ResourcePanel({ config }: { config: ResourceConfig }) {
 
       {(message || error) && <Message message={message} error={error} />}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5 text-primary" />
-            {config.createTitle}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={createRow} className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
-            {config.fields.map((field) => (
-              <FieldControl
-                key={field.key}
-                field={field}
-                value={form[field.key]}
-                lookups={lookups}
-                onChange={(value) => setForm((current) => ({ ...current, [field.key]: value }))}
-              />
-            ))}
-            <div className="flex items-end">
-              <Button type="submit" className="w-full" disabled={isCreating}>
-                {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                Create
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      {canCreate && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-primary" />
+              {config.createTitle}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={createRow} className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
+              {config.fields.map((field) => {
+                const resolvedField = resolveField(field, form);
+                return (
+                  <FieldControl
+                    key={field.key}
+                    field={resolvedField}
+                    value={form[field.key]}
+                    lookups={filteredLookups}
+                    onChange={(value) => setForm((current) => ({ ...current, [field.key]: value }))}
+                  />
+                );
+              })}
+              <div className="flex items-end">
+                <Button type="submit" className="w-full" disabled={isCreating}>
+                  {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                  Create
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -656,6 +698,16 @@ function FieldControl({
       )}
     </div>
   );
+}
+
+function resolveField(field: Field, form: Row): Field {
+  if (!field.entityOption) return field;
+
+  const entityType = form.entityType === "DRIVER" ? "drivers" : "vehicles";
+  return {
+    ...field,
+    optionSource: entityType,
+  };
 }
 
 function RowActions({

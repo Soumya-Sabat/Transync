@@ -39,7 +39,7 @@ export async function GET(request: Request) {
         orderBy: { [sortBy]: sortOrder },
         include: {
           _count: {
-            select: { trips: true, documents: true },
+            select: { trips: true },
           },
         },
       }),

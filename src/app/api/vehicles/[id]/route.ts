@@ -16,7 +16,6 @@ export async function GET(
         trips: { take: 5, orderBy: { createdAt: "desc" } },
         maintenanceLogs: { take: 5, orderBy: { createdAt: "desc" } },
         fuelLogs: { take: 5, orderBy: { createdAt: "desc" } },
-        documents: true,
         _count: {
           select: { trips: true, maintenanceLogs: true, fuelLogs: true, expenses: true },
         },
