@@ -211,7 +211,7 @@ export default function Home() {
       </header>
 
       <section className="relative overflow-hidden px-4 pb-20 pt-10 sm:px-6 lg:px-8 lg:pt-14">
-        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center transition-all duration-300">
+        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
           <div className="space-y-8">
             <div className="inline-flex items-center gap-3 rounded-full border border-cyan-400/15 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.28em] text-cyan-200 shadow-[0_0_30px_-20px_rgba(0,240,255,0.5)]">
               <Sparkles className="h-4 w-4 text-cyan-300" />
@@ -219,10 +219,11 @@ export default function Home() {
             </div>
             <div className="space-y-6 animate-fade-in-up" style={{ animationDelay: "0.18s" }}>
               <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-[-0.03em] text-white sm:text-5xl lg:text-6xl">
-                One platform for dispatch, maintenance, compliance, and asset control.
+                <span className="block bg-linear-to-r from-cyan-300 via-violet-300 to-fuchsia-500 bg-clip-text text-transparent">Secure Autonomous Fleet Operations.</span>
+                Command, validate, and optimize every route in one immutable command plane.
               </h1>
-              <p className="max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
-                TranSync connects vehicles, drivers, trips, fuel, and maintenance into a single command center for transport teams, with live rules, audit trails, and real-time operational visibility.
+              <p className="max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
+                Centralize dispatch, compliance, and utilization for enterprise transport teams with live guardrails, predictive load protection, and command-grade transparency.
               </p>
             </div>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center animate-fade-in-up" style={{ animationDelay: "0.28s" }}>
@@ -454,7 +455,7 @@ export default function Home() {
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.2fr_0.9fr] lg:items-start">
           <div className="rounded-4xl border border-white/10 bg-slate-950/90 p-10 shadow-[0_20px_90px_-50px_rgba(0,240,255,0.14)]">
             <p className="text-sm uppercase tracking-[0.28em] text-cyan-300">Ready for rollout</p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.03em] text-white sm:text-5xl">A complete route from dispatch to audit-ready delivery.</h2>
+            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.03em] text-white sm:text-5xl typewriter-slow">A complete route from dispatch to audit-ready delivery.</h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-400">TranSync delivers end-to-end fleet orchestration with secure audit trails, automated dispatch, and integrated maintenance workflows.</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/login" className="inline-flex items-center justify-center rounded-full bg-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300">Open dashboard</Link>
@@ -464,7 +465,7 @@ export default function Home() {
 
           <div className="rounded-4xl border border-white/10 bg-slate-950/90 p-10 shadow-[0_20px_90px_-50px_rgba(0,240,255,0.14)]">
             <p className="text-sm uppercase tracking-[0.28em] text-cyan-300">Contact us</p>
-            <h3 className="mt-4 text-3xl font-semibold text-white">Get in touch</h3>
+            <h3 className="mt-4 text-3xl font-semibold text-white typewriter">Get in touch</h3>
             <p className="mt-3 text-sm leading-7 text-slate-400">Share your fleet requirements, integration needs, and deployment timeline so we can route you to the right operations team.</p>
             <form className="mt-6 grid gap-4">
               <input type="text" placeholder="Your name" className="rounded-3xl border border-white/10 bg-[#08101e] px-4 py-3 text-sm text-slate-100 outline-none focus:border-cyan-400/40 focus:ring-2 focus:ring-cyan-400/20" />

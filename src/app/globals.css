@@ -125,6 +125,24 @@ body {
   }
 }
 
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink-caret {
+  0%, 100% {
+    border-color: transparent;
+  }
+  50% {
+    border-color: rgba(56,189,248,0.9);
+  }
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
