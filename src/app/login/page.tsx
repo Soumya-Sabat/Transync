@@ -153,8 +153,7 @@ function LoginForm() {
                 </form>
               </CardContent>
               <CardFooter className="flex flex-col items-start gap-1 border-t text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">Demo access</span>
-                <span>fleet@transitops.com / password123</span>
+                <span className="font-medium text-foreground">Access to the portal...</span>
               </CardFooter>
             </Card>
           </div>
