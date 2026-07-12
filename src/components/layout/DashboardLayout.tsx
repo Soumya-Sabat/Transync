@@ -61,7 +61,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background flex">
       {/* Mobile sidebar sheet */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="w-72 p-0 max-w-sm">
+        <SheetContent side="left" className="w-64 p-0 max-w-sm">
           <SidebarContent
             filteredNav={filteredNav}
             pathname={pathname}
@@ -74,7 +74,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </Sheet>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:w-72 lg:flex lg:flex-col">
+      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:w-60 lg:flex lg:flex-col">
         <SidebarContent
           filteredNav={filteredNav}
           pathname={pathname}
@@ -85,7 +85,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col lg:ml-72">
+      <div className="flex-1 flex flex-col lg:ml-60">
         {/* Top bar */}
         <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6">
           <Button
@@ -183,14 +183,14 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col border-r bg-card">
       {/* Logo */}
-      <div className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-        <Truck className="h-8 w-8 text-primary" />
-        <span className="text-xl font-bold">TransitOps</span>
+      <div className="flex h-14 shrink-0 items-center gap-2 border-b px-3">
+        <Truck className="h-6 w-6 text-primary" />
+        <span className="text-lg font-bold">TransitOps</span>
       </div>
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 py-4">
-        <nav className="px-2 space-y-1">
+      <ScrollArea className="flex-1 py-3">
+        <nav className="space-y-1 px-2">
           {filteredNav.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
@@ -198,7 +198,7 @@ function SidebarContent({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-2 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -206,9 +206,9 @@ function SidebarContent({
               >
                 {(() => {
                   const Icon = icons[item.icon as keyof typeof icons] ?? LayoutDashboard;
-                  return <Icon className="h-5 w-5 shrink-0" />;
+                  return <Icon className="h-4 w-4 shrink-0" />;
                 })()}
-                {item.label}
+                <span className="truncate">{item.label}</span>
               </Link>
             );
           })}
@@ -216,9 +216,9 @@ function SidebarContent({
       </ScrollArea>
 
       {/* User info */}
-      <div className="border-t p-4">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
+      <div className="border-t p-3">
+        <div className="flex items-center gap-2">
+          <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-primary/20 text-primary font-medium">
               {getInitials(userName)}
             </AvatarFallback>
@@ -228,14 +228,14 @@ function SidebarContent({
             <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
           </div>
         </div>
-        <span className={`inline-block mt-2 px-2 py-0.5 text-xs rounded-full ${getRoleColor(userRole)}`}>
+        <span className={`mt-2 inline-block max-w-full truncate px-2 py-0.5 text-xs rounded-full ${getRoleColor(userRole)}`}>
           {formatRole(userRole)}
         </span>
 
         {onClose && (
           <Button
             variant="outline"
-            className="mt-4 w-full"
+            className="mt-3 w-full"
             onClick={onClose}
             size="sm"
           >

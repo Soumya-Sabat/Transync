@@ -55,15 +55,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       <aside
         id="sidebar"
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 bg-card border-r transition-transform duration-200 ease-in-out lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 w-60 bg-card border-r transition-transform duration-200 ease-in-out lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
         aria-label="Main navigation"
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between h-16 px-4 border-b">
-            <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl">
-              <Truck className="h-6 w-6 text-primary" />
+          <div className="flex h-14 items-center justify-between border-b px-3">
+            <Link href="/dashboard" className="flex items-center gap-2 text-lg font-bold">
+              <Truck className="h-5 w-5 text-primary" />
               <span className="hidden sm:inline">TransitOps</span>
             </Link>
             <Button
@@ -77,7 +77,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </Button>
           </div>
 
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto" role="navigation" aria-label="Main">
+          <nav className="flex-1 space-y-1 overflow-y-auto p-3" role="navigation" aria-label="Main">
             {navItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
               const Icon = icons[item.icon] || Truck;
@@ -87,21 +87,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center gap-2 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
                     isActive
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   )}
                   onClick={onClose}
                 >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  <Icon className="h-4 w-4 flex-shrink-0" />
                   <span className="truncate">{item.label}</span>
                 </Link>
               );
             })}
           </nav>
 
-          <div className="p-4 border-t space-y-4">
+          <div className="space-y-3 border-t p-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Dark Mode</span>
               <Switch
