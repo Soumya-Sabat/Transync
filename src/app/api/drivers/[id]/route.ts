@@ -14,9 +14,8 @@ export async function GET(
       where: { id },
       include: {
         trips: { take: 5, orderBy: { createdAt: "desc" } },
-        documents: true,
         _count: {
-          select: { trips: true, documents: true },
+          select: { trips: true },
         },
       },
     });

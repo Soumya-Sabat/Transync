@@ -6,45 +6,83 @@ export type NavItem = {
   icon: string;
 };
 
-const baseNav: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
+type ProtectedNavItem = NavItem & {
+  roles: DbRole[];
+};
+
+const navItems: ProtectedNavItem[] = [
+  {
+    href: "/dashboard",
+    label: "Dashboard",
+    icon: "LayoutDashboard",
+    roles: ["FLEET_MANAGER", "DRIVER", "SAFETY_OFFICER", "FINANCIAL_ANALYST"],
+  },
+  {
+    href: "/vehicles",
+    label: "Vehicles",
+    icon: "Truck",
+    roles: ["FLEET_MANAGER", "FINANCIAL_ANALYST"],
+  },
+  {
+    href: "/drivers",
+    label: "Drivers",
+    icon: "Users",
+    roles: ["FLEET_MANAGER", "SAFETY_OFFICER", "FINANCIAL_ANALYST"],
+  },
+  {
+    href: "/trips",
+    label: "Trips",
+    icon: "MapPin",
+    roles: ["FLEET_MANAGER", "DRIVER", "SAFETY_OFFICER", "FINANCIAL_ANALYST"],
+  },
+  {
+    href: "/maintenance",
+    label: "Maintenance",
+    icon: "Wrench",
+    roles: ["FLEET_MANAGER", "SAFETY_OFFICER", "FINANCIAL_ANALYST"],
+  },
+  {
+    href: "/fuel-expenses",
+    label: "Fuel & Expenses",
+    icon: "Fuel",
+    roles: ["FLEET_MANAGER", "DRIVER", "FINANCIAL_ANALYST"],
+  },
+  {
+    href: "/reports",
+    label: "Reports",
+    icon: "BarChart3",
+    roles: ["FLEET_MANAGER", "SAFETY_OFFICER", "FINANCIAL_ANALYST"],
+  },
+  {
+    href: "/documents",
+    label: "Documents",
+    icon: "FileText",
+    roles: ["FLEET_MANAGER", "DRIVER", "SAFETY_OFFICER", "FINANCIAL_ANALYST"],
+  },
 ];
 
-const fullOperationalNav: NavItem[] = [
-  ...baseNav,
-  { href: "/vehicles", label: "Vehicles", icon: "Truck" },
-  { href: "/drivers", label: "Drivers", icon: "Users" },
-  { href: "/trips", label: "Trips", icon: "MapPin" },
-  { href: "/maintenance", label: "Maintenance", icon: "Wrench" },
-  { href: "/fuel-expenses", label: "Fuel & Expenses", icon: "Fuel" },
-  { href: "/reports", label: "Reports", icon: "BarChart3" },
-  { href: "/documents", label: "Documents", icon: "FileText" },
-];
-
-export function getNavItemsForRole(role: AppRole): NavItem[] {
-  const roleNav: Record<DbRole, NavItem[]> = {
-    FLEET_MANAGER: fullOperationalNav,
-    DRIVER: [
-      ...baseNav,
-      { href: "/trips", label: "My Trips", icon: "MapPin" },
-      { href: "/fuel-expenses", label: "Fuel Logs", icon: "Fuel" },
-      { href: "/documents", label: "Documents", icon: "FileText" },
-    ],
-    SAFETY_OFFICER: [
-      ...baseNav,
-      { href: "/drivers", label: "Drivers", icon: "Users" },
-      { href: "/documents", label: "Documents", icon: "FileText" },
-      { href: "/reports", label: "Reports", icon: "BarChart3" },
-    ],
-    FINANCIAL_ANALYST: fullOperationalNav,
+function toNavItem(item: ProtectedNavItem): NavItem {
+  return {
+    href: item.href,
+    label: item.label,
+    icon: item.icon,
   };
+}
+
+export function getNavItemsForRole(role: AppRole | undefined): NavItem[] {
+  if (!role) return [];
 
   if (isSuperAdminRole(role)) {
     return [
-      ...fullOperationalNav,
+      ...navItems.map(toNavItem),
       { href: "/super-admin", label: "Super Admin", icon: "Settings" },
     ];
   }
 
-  return roleNav[role] || baseNav;
+  return navItems
+    .filter((item) => item.roles.includes(role))
+    .map((item) => ({
+      ...toNavItem(item),
+      label: role === "DRIVER" && item.href === "/trips" ? "My Trips" : item.label,
+    }));
 }

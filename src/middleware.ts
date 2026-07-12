@@ -4,6 +4,18 @@ import { NextResponse } from "next/server";
 
 const publicRoutes = ["/login", "/api/auth"];
 const apiRoutes = ["/api"];
+const superAdminRole = "SUPER_ADMIN";
+const routeRoles: Record<string, string[]> = {
+  "/dashboard": ["FLEET_MANAGER", "DRIVER", "SAFETY_OFFICER", "FINANCIAL_ANALYST"],
+  "/vehicles": ["FLEET_MANAGER", "FINANCIAL_ANALYST"],
+  "/drivers": ["FLEET_MANAGER", "SAFETY_OFFICER", "FINANCIAL_ANALYST"],
+  "/trips": ["FLEET_MANAGER", "DRIVER", "SAFETY_OFFICER", "FINANCIAL_ANALYST"],
+  "/maintenance": ["FLEET_MANAGER", "SAFETY_OFFICER", "FINANCIAL_ANALYST"],
+  "/fuel-expenses": ["FLEET_MANAGER", "DRIVER", "FINANCIAL_ANALYST"],
+  "/reports": ["FLEET_MANAGER", "SAFETY_OFFICER", "FINANCIAL_ANALYST"],
+  "/documents": ["FLEET_MANAGER", "DRIVER", "SAFETY_OFFICER", "FINANCIAL_ANALYST"],
+  "/super-admin": [superAdminRole],
+};
 
 export default async function middleware(req: NextRequest) {
   const { nextUrl } = req;
@@ -35,6 +47,19 @@ export default async function middleware(req: NextRequest) {
 
   if (isApiRoute) {
     return NextResponse.next();
+  }
+
+  const matchedRoute = Object.keys(routeRoles)
+    .sort((a, b) => b.length - a.length)
+    .find((route) => nextUrl.pathname === route || nextUrl.pathname.startsWith(`${route}/`));
+
+  if (matchedRoute) {
+    const role = typeof token.role === "string" ? token.role : "";
+    const canAccess = role === superAdminRole || routeRoles[matchedRoute].includes(role);
+
+    if (!canAccess) {
+      return NextResponse.redirect(new URL("/dashboard", nextUrl));
+    }
   }
 
   return NextResponse.next();

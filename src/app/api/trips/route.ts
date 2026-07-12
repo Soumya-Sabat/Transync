@@ -6,6 +6,30 @@ import { resolveActorId } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
+function parseRequiredNumber(value: unknown) {
+  if (value === undefined || value === null || value === "") return Number.NaN;
+  return Number(value);
+}
+
+function errorResponse(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message === "Unauthorized") {
+    return NextResponse.json({ error: "Please sign in again" }, { status: 401 });
+  }
+
+  if (error instanceof Error && error.message === "Forbidden") {
+    return NextResponse.json({ error: "You do not have permission to create trips" }, { status: 403 });
+  }
+
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+    return NextResponse.json({ error: "Selected vehicle, driver, or user was not found" }, { status: 400 });
+  }
+
+  return NextResponse.json(
+    { error: error instanceof Error ? error.message : fallback },
+    { status: 500 }
+  );
+}
+
 export async function GET(request: Request) {
   try {
     await requirePermission("trips:read");
@@ -85,8 +109,49 @@ export async function POST(request: Request) {
       driverId,
     } = body;
 
-    if (!source || !destination || cargoWeight === undefined || !plannedDistance || !vehicleId || !driverId) {
+    const trimmedSource = String(source ?? "").trim();
+    const trimmedDestination = String(destination ?? "").trim();
+    const parsedCargoWeight = parseRequiredNumber(cargoWeight);
+    const parsedPlannedDistance = parseRequiredNumber(plannedDistance);
+    const selectedVehicleId = String(vehicleId ?? "").trim();
+    const selectedDriverId = String(driverId ?? "").trim();
+
+    if (!trimmedSource || !trimmedDestination || cargoWeight === undefined || plannedDistance === undefined || !selectedVehicleId || !selectedDriverId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    if (!Number.isFinite(parsedCargoWeight) || parsedCargoWeight <= 0) {
+      return NextResponse.json({ error: "Cargo weight must be a valid positive number" }, { status: 400 });
+    }
+
+    if (!Number.isFinite(parsedPlannedDistance) || parsedPlannedDistance <= 0) {
+      return NextResponse.json({ error: "Planned distance must be a valid positive number" }, { status: 400 });
+    }
+
+    const [vehicle, driver] = await Promise.all([
+      prisma.vehicle.findUnique({
+        where: { id: selectedVehicleId },
+        select: { id: true, maxLoadCapacity: true },
+      }),
+      prisma.driver.findUnique({
+        where: { id: selectedDriverId },
+        select: { id: true },
+      }),
+    ]);
+
+    if (!vehicle) {
+      return NextResponse.json({ error: "Selected vehicle was not found" }, { status: 400 });
+    }
+
+    if (!driver) {
+      return NextResponse.json({ error: "Selected driver was not found" }, { status: 400 });
+    }
+
+    if (vehicle.maxLoadCapacity < parsedCargoWeight) {
+      return NextResponse.json(
+        { error: `Cargo weight exceeds selected vehicle capacity (${vehicle.maxLoadCapacity})` },
+        { status: 400 }
+      );
     }
 
     const actorId = await resolveActorId(session.user);
@@ -94,12 +159,12 @@ export async function POST(request: Request) {
     // Create trip in DRAFT status
     const trip = await prisma.trip.create({
       data: {
-        source,
-        destination,
-        cargoWeight: parseFloat(cargoWeight),
-        plannedDistance: parseFloat(plannedDistance),
-        vehicleId,
-        driverId,
+        source: trimmedSource,
+        destination: trimmedDestination,
+        cargoWeight: parsedCargoWeight,
+        plannedDistance: parsedPlannedDistance,
+        vehicleId: selectedVehicleId,
+        driverId: selectedDriverId,
         assignedById: actorId,
         status: TripStatus.DRAFT,
       },
@@ -112,6 +177,6 @@ export async function POST(request: Request) {
     return NextResponse.json(trip, { status: 201 });
   } catch (error) {
     console.error("Error creating trip:", error);
-    return NextResponse.json({ error: "Failed to create trip" }, { status: 500 });
+    return errorResponse(error, "Failed to create trip");
   }
 }
