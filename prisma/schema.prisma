@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  role  UserRole @default(USER)
+  // trips Trip[]
+}
+
+// model Vehicle {
+//   id    Int     @id @default(autoincrement())
+//   regNo String  @unique
+//   type  VehicleType
+//   capacity Int
+//   trips Trip[]
+// }
+
+// model Trip {
+//   id          Int       @id @default(autoincrement())
+//   vehicleId   Int
+//   driverId    Int
+//   startTime   DateTime
+//   endTime     DateTime
+//   passengers  Int
+//   from        String
+//   to          String
+  
+//   driver      User      @relation(fields: [driverId], references: [id])
+//   vehicle     Vehicle   @relation(fields: [vehicleId], references: [id])
+
+//   // Constraint: One driver can't be on two trips at the same time
+//   @@unique([driverId, startTime, endTime])
+//   // Constraint: One vehicle can't be used for two trips at the same time
+//   @@unique([vehicleId, startTime, endTime])
+// }
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// enum VehicleType {
+//   CAR
+//   BUS
+//   VAN
+// }
