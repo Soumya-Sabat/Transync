@@ -1,60 +1,239 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  FLEET_MANAGER
+  DRIVER
+  SAFETY_OFFICER
+  FINANCIAL_ANALYST
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  ON_TRIP
+  IN_SHOP
+  RETIRED
+}
+
+enum DriverStatus {
+  AVAILABLE
+  ON_TRIP
+  OFF_DUTY
+  SUSPENDED
+}
+
+enum TripStatus {
+  DRAFT
+  DISPATCHED
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenanceStatus {
+  OPEN
+  CLOSED
+}
+
+enum DocumentType {
+  VEHICLE_INSURANCE
+  VEHICLE_REGISTRATION
+  VEHICLE_PERMIT
+  VEHICLE_FITNESS_CERT
+  DRIVER_LICENSE
+}
+
+enum EntityType {
+  VEHICLE
+  DRIVER
+  TRIP
+  MAINTENANCE
+  FUEL_LOG
+  EXPENSE
+}
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  role  UserRole @default(USER)
-  // trips Trip[]
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String
+  role          Role
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  documents         Document[]
+  assignedTrips     Trip[]   @relation("TripAssignedBy")
+  maintenanceLogs   MaintenanceLog[] @relation("MaintenanceCreatedBy")
+  expenses          Expense[]
+  statusHistory     StatusHistory[] @relation("StatusHistoryActor")
+
+  @@map("users")
 }
 
-// model Vehicle {
-//   id    Int     @id @default(autoincrement())
-//   regNo String  @unique
-//   type  VehicleType
-//   capacity Int
-//   trips Trip[]
-// }
+model Vehicle {
+  id              String   @id @default(cuid())
+  registrationNo  String   @unique
+  name            String
+  type            String
+  maxLoadCapacity Float
+  odometer        Float    @default(0)
+  acquisitionCost Float
+  status          VehicleStatus @default(AVAILABLE)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-// model Trip {
-//   id          Int       @id @default(autoincrement())
-//   vehicleId   Int
-//   driverId    Int
-//   startTime   DateTime
-//   endTime     DateTime
-//   passengers  Int
-//   from        String
-//   to          String
-  
-//   driver      User      @relation(fields: [driverId], references: [id])
-//   vehicle     Vehicle   @relation(fields: [vehicleId], references: [id])
+  maintenanceLogs MaintenanceLog[]
+  fuelLogs        FuelLog[]
+  trips           Trip[]
+  documents       Document[] @relation("VehicleDocuments")
+  expenses        Expense[]
+  statusHistory   StatusHistory[] @relation("VehicleStatusHistory")
 
-//   // Constraint: One driver can't be on two trips at the same time
-//   @@unique([driverId, startTime, endTime])
-//   // Constraint: One vehicle can't be used for two trips at the same time
-//   @@unique([vehicleId, startTime, endTime])
-// }
-
-enum UserRole {
-  USER
-  ADMIN
+  @@map("vehicles")
 }
 
-// enum VehicleType {
-//   CAR
-//   BUS
-//   VAN
-// }
+model Driver {
+  id              String      @id @default(cuid())
+  name            String
+  licenseNumber   String      @unique
+  licenseCategory String
+  licenseExpiry   DateTime
+  contactNumber   String
+  safetyScore     Float       @default(0)
+  status          DriverStatus @default(AVAILABLE)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  trips           Trip[] @relation("TripDriver")
+  documents       Document[] @relation("DriverDocuments")
+  statusHistory   StatusHistory[] @relation("DriverStatusHistory")
+
+  @@map("drivers")
+}
+
+model Trip {
+  id              String     @id @default(cuid())
+  source          String
+  destination     String
+  cargoWeight     Float
+  plannedDistance Float
+  actualDistance  Float?
+  status          TripStatus @default(DRAFT)
+  vehicleId       String
+  driverId        String
+  assignedById    String
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  vehicle         Vehicle    @relation(fields: [vehicleId], references: [id])
+  driver          Driver     @relation("TripDriver", fields: [driverId], references: [id])
+  assignedBy      User       @relation("TripAssignedBy", fields: [assignedById], references: [id])
+  fuelLogs        FuelLog[]
+  expenses        Expense[]
+  statusHistory   StatusHistory[] @relation("TripStatusHistory")
+
+  @@index([vehicleId, status])
+  @@index([driverId, status])
+  @@index([status])
+  @@map("trips")
+}
+
+model MaintenanceLog {
+  id          String           @id @default(cuid())
+  vehicleId   String
+  type        String
+  cost        Float
+  date        DateTime         @default(now())
+  odometer    Float
+  notes       String?
+  status      MaintenanceStatus @default(OPEN)
+  createdById String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  vehicle     Vehicle          @relation(fields: [vehicleId], references: [id])
+  createdBy   User             @relation("MaintenanceCreatedBy", fields: [createdById], references: [id])
+
+  @@map("maintenance_logs")
+}
+
+model FuelLog {
+  id        String   @id @default(cuid())
+  vehicleId String
+  tripId    String?
+  liters    Float
+  cost      Float
+  date      DateTime @default(now())
+  odometer  Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+  trip      Trip?    @relation(fields: [tripId], references: [id])
+
+  @@map("fuel_logs")
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  vehicleId   String?
+  tripId      String?
+  type        String
+  amount      Float
+  date        DateTime @default(now())
+  description String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  vehicle     Vehicle? @relation(fields: [vehicleId], references: [id])
+  trip        Trip?    @relation(fields: [tripId], references: [id])
+  createdBy   User     @relation(fields: [createdById], references: [id])
+
+  @@map("expenses")
+}
+
+model Document {
+  id           String        @id @default(cuid())
+  entityType   EntityType
+  entityId     String
+  type         DocumentType
+  fileUrl      String
+  expiryDate   DateTime?
+  version      Int           @default(1)
+  uploadedById String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  uploadedBy   User          @relation(fields: [uploadedById], references: [id])
+  vehicle      Vehicle?      @relation("VehicleDocuments", fields: [entityId], references: [id], map: "VehicleDocuments")
+  driver       Driver?       @relation("DriverDocuments", fields: [entityId], references: [id], map: "DriverDocuments")
+
+  @@index([entityType, entityId])
+  @@index([expiryDate])
+  @@map("documents")
+}
+
+model StatusHistory {
+  id          String      @id @default(cuid())
+  entityType  EntityType
+  entityId    String
+  oldStatus   String
+  newStatus   String
+  actorId     String
+  timestamp   DateTime    @default(now())
+
+  actor       User        @relation("StatusHistoryActor", fields: [actorId], references: [id])
+  vehicle     Vehicle?    @relation("VehicleStatusHistory", fields: [entityId], references: [id], map: "VehicleStatusHistory")
+  driver      Driver?     @relation("DriverStatusHistory", fields: [entityId], references: [id], map: "DriverStatusHistory")
+  trip        Trip?       @relation("TripStatusHistory", fields: [entityId], references: [id], map: "TripStatusHistory")
+
+  @@index([entityType, entityId])
+  @@map("status_history")
+}
