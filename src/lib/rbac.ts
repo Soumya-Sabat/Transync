@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
-import { Role } from "@prisma/client";
-import { AppRole, SUPER_ADMIN_ROLE, isSuperAdminRole } from "@/lib/roles";
+import { SUPER_ADMIN_ROLE, isSuperAdminRole, type AppRole, type DbRole } from "@/lib/roles";
 import { getNavItemsForRole } from "@/lib/navigation";
 
 type Permission = 
@@ -14,7 +13,7 @@ type Permission =
   | "documents:create" | "documents:read" | "documents:update" | "documents:delete"
   | "users:create" | "users:read" | "users:update" | "users:delete";
 
-const rolePermissions: Record<Role, Permission[]> = {
+const rolePermissions: Record<DbRole, Permission[]> = {
   FLEET_MANAGER: [
     "vehicles:create",
     "vehicles:read",
