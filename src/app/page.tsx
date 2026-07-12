@@ -155,7 +155,7 @@ export default function Home() {
 
   useEffect(() => {
     const onScroll = () => {
-      setIsHeaderShrunk(window.scrollY > 20);
+      setIsHeaderShrunk(window.scrollY > 60);
     };
 
     onScroll();
@@ -181,13 +181,15 @@ export default function Home() {
   );
 
   return (
-    <main className="relative overflow-hidden bg-[#090A0F] text-slate-100">
-      <div className="pointer-events-none absolute inset-0 animate-drift bg-[radial-gradient(circle_at_top,rgba(0,240,255,0.08),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(139,92,246,0.08),transparent_25%)]" />
-      <div className="pointer-events-none absolute inset-0 animate-drift bg-[linear-gradient(180deg,rgba(10,13,22,0.42),transparent_55%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(0deg,rgba(255,255,255,0.02),rgba(255,255,255,0.02) 1px,transparent 1px,transparent 24px)] mix-blend-overlay opacity-10" />
+    <main className="relative bg-[#090A0F] text-slate-100">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden animate-drift">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,240,255,0.08),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(139,92,246,0.08),transparent_25%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,13,22,0.42),transparent_55%)]" />
+        <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,rgba(255,255,255,0.02),rgba(255,255,255,0.02) 1px,transparent 1px,transparent 24px)] mix-blend-overlay opacity-10" />
+      </div>
 
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0f121b]/95 backdrop-blur-xl transition-all duration-300 animate-fade-in-up" style={{ animationDelay: "0.08s" }}>
-        <div className={`mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-[height,gap] duration-300 ${isHeaderShrunk ? "h-16 gap-4" : "h-20 gap-8"}`}>
+      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/10 bg-[#0f121b]/95 backdrop-blur-xl transition-all duration-300" style={{ height: isHeaderShrunk ? 64 : 80 }}>
+        <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-[gap] duration-300" style={{ gap: isHeaderShrunk ? 16 : 32 }}>
           <Link href="/" className={`flex items-center gap-3 ${isHeaderShrunk ? "text-[0.75rem]" : "text-sm"} font-semibold uppercase tracking-[0.28em] text-cyan-300 transition-all duration-300`}>
             <span className={`${isHeaderShrunk ? "h-9 w-9" : "h-11 w-11"} grid place-items-center rounded-2xl border border-cyan-400/20 bg-cyan-500/10 text-cyan-200 shadow-[0_0_24px_-10px_rgba(0,240,255,0.7)] animate-glow transition-all duration-300`}>
               <Truck className={isHeaderShrunk ? "h-4 w-4" : "h-5 w-5"} />
@@ -210,7 +212,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="relative overflow-hidden px-4 pb-20 pt-10 sm:px-6 lg:px-8 lg:pt-14">
+      <section className="relative overflow-hidden px-4 pb-20 pt-28 sm:px-6 lg:px-8 lg:pt-32">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
           <div className="space-y-8">
             <div className="inline-flex items-center gap-3 rounded-full border border-cyan-400/15 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.28em] text-cyan-200 shadow-[0_0_30px_-20px_rgba(0,240,255,0.5)]">
